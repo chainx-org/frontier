@@ -1,4 +1,6 @@
 [workspace]
+resolver = "2"
+
 members = [
 	"frame/dynamic-fee",
 	"frame/ethereum",
@@ -22,4 +24,13 @@ members = [
 	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
+	"vendor/evm",
+	"vendor/evm/core",
+	"vendor/evm/gasometer",
+	"vendor/evm/runtime",
+	"vendor/evm/fuzzer",
+	"vendor/ethereum"
 ]
+
+[profile.release]
+panic = 'unwind'
