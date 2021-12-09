@@ -435,7 +435,7 @@ impl<T: Config> Pallet<T> {
 		BlockHash::<T>::insert(block_number, block.header.hash());
 
 		if post_log {
-			let digest = DigestItem::<T::Hash>::Consensus(
+			let digest = DigestItem::Consensus(
 				FRONTIER_ENGINE_ID,
 				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 			);
@@ -479,7 +479,7 @@ impl<T: Config> Pallet<T> {
 		};
 		if gasometer.record_transaction(transaction_cost).is_err() {
 			return Err(InvalidTransaction::Custom(
-				TransactionValidationError::InvalidGasLimit as u8,
+				TransactionValidationError::GasLimitTooLow as u8,
 			)
 			.into());
 		}
@@ -495,7 +495,7 @@ impl<T: Config> Pallet<T> {
 
 		if gas_limit >= T::BlockGasLimit::get() {
 			return Err(InvalidTransaction::Custom(
-				TransactionValidationError::InvalidGasLimit as u8,
+				TransactionValidationError::GasLimitTooHigh as u8,
 			)
 			.into());
 		}
@@ -530,6 +530,13 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
+
+		if account_data.balance < transaction_data.value {
+			return Err(InvalidTransaction::Custom(
+				TransactionValidationError::InsufficientFundsForTransfer as u8,
+			)
+			.into());
+		}
 		let total_payment = transaction_data.value.saturating_add(fee);
 		if account_data.balance < total_payment {
 			return Err(InvalidTransaction::Payment.into());
@@ -572,8 +579,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn apply_validated_transaction(source: H160, transaction: Transaction) -> PostDispatchInfo {
-		let transaction_hash =
-			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
+		let transaction_hash = transaction.hash();
 		let transaction_index = Pending::<T>::get().len() as u32;
 
 		let (to, _, info) = Self::execute(source, &transaction, None)
@@ -845,10 +851,14 @@ impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
 }
 
 #[repr(u8)]
-enum TransactionValidationError {
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+pub enum TransactionValidationError {
 	#[allow(dead_code)]
+	#[num_enum(default)]
 	UnknownError,
 	InvalidChainId,
 	InvalidSignature,
-	InvalidGasLimit,
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	InsufficientFundsForTransfer,
 }
