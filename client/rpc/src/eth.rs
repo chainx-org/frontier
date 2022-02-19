@@ -1220,8 +1220,29 @@ where
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+		// Define the lower bound of estimate
+		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
+
 		// Get best hash (TODO missing support for estimating gas historically)
 		let best_hash = self.client.info().best_hash;
+
+		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
+		let is_simple_transfer = match &request.data {
+			None => true,
+			Some(vec) => vec.0.is_empty(),
+		};
+		if is_simple_transfer {
+			if let Some(to) = request.to {
+				let to_code = self
+					.client
+					.runtime_api()
+					.account_code_at(&BlockId::Hash(best_hash), to)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				if to_code.is_empty() {
+					return Ok(MIN_GAS_PER_TX);
+				}
+			}
+		}
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(
@@ -1263,13 +1284,11 @@ where
 			}
 		};
 
-		let api = self.client.runtime_api();
-
 		// Recap the highest gas allowance with account's balance.
 		if let Some(from) = request.from {
 			let gas_price = gas_price.unwrap_or_default();
 			if gas_price > U256::zero() {
-				let balance = api
+				let balance = self.client.runtime_api()
 					.account_basic(&BlockId::Hash(best_hash), from)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.balance;
@@ -1301,6 +1320,8 @@ where
 			used_gas: U256,
 		}
 
+		let client = self.client.clone();
+
 		// Create a helper to check if a gas allowance results in an executable transaction
 		let executable =
 			move |request: CallRequest, gas_limit, api_version| -> Result<ExecutableResult> {
@@ -1313,6 +1334,9 @@ where
 					nonce,
 					..
 				} = request;
+
+				// Fresh instance per execution
+				let api = client.runtime_api();
 
 				// Use request gas limit only if it less than gas_limit parameter
 				let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
@@ -1460,7 +1484,6 @@ where
 		#[cfg(feature = "rpc_binary_search_estimate")]
 		{
 			// Define the lower bound of the binary search
-			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 			let mut lowest = MIN_GAS_PER_TX;
 
 			// Start close to the used gas for faster binary search
