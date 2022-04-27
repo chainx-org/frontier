@@ -126,8 +126,8 @@ fn fee_deduction() {
 		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10)).unwrap();
 		assert_eq!(Balances::free_balance(&substrate_addr), 90);
 
-		// Refund fees as 5 units
-		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance);
+		// Refund fees as 5 units, priority fees as 0 uints
+		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), None,imbalance);
 		assert_eq!(Balances::free_balance(&substrate_addr), 95);
 	});
 }
@@ -302,6 +302,9 @@ fn refunds_should_work() {
 fn refunds_and_priority_should_work() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
+		let author_substrate = <Test as Config>::AddressMapping::into_account_id(author);
+		let H160_substrate = <Test as Config>::AddressMapping::into_account_id(H160::default());
+
 		let before_tip = EVM::account_basic(&author).balance;
 		let before_call = EVM::account_basic(&H160::default()).balance;
 		// We deliberately set a base fee + max tip > max fee.

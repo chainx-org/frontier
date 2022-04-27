@@ -370,7 +370,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		})?;
 
 	// Channel for the rpc handler to communicate with the authorship task.
-	let (command_sink, _commands_stream) = futures::channel::mpsc::channel(1000);
+	let command_channel = futures::channel::mpsc::channel(1000);
+	let command_sink = command_channel.0;
+
+	#[cfg(feature = "manual-seal")]
+	let commands_stream = command_channel.1;
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
