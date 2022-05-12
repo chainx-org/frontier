@@ -61,9 +61,14 @@ fn transaction_without_enough_gas_should_not_work() {
 
 		let call = crate::Call::<Test>::transact { transaction };
 		let source = call.check_self_contained().unwrap().unwrap();
-
+		let extrinsic = fp_self_contained::CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
 		assert_err!(
-			call.validate_self_contained(&source).unwrap(),
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
 			InvalidTransaction::Payment
 		);
 	});
@@ -83,9 +88,15 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			transaction: signed,
 		};
 		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = fp_self_contained::CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, H160> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
 
 		assert_eq!(
-			call.validate_self_contained(&source).unwrap(),
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(0u64)
@@ -105,9 +116,15 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			transaction: signed2,
 		};
 		let source2 = call2.check_self_contained().unwrap().unwrap();
+		let extrinsic2 = fp_self_contained::CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call2.clone()),
+		};
 
 		assert_err!(
-			call2.validate_self_contained(&source2).unwrap(),
+			call2
+				.validate_self_contained(&source2, &extrinsic2.get_dispatch_info(), 0)
+				.unwrap(),
 			InvalidTransaction::Stale
 		);
 	});
@@ -131,7 +148,6 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
 			signed: fp_self_contained::CheckedSignature::SelfContained(source),
 			function: Call::Ethereum(call),
 		};
-		use frame_support::weights::GetDispatchInfo as _;
 		let dispatch_info = extrinsic.get_dispatch_info();
 		assert_err!(
 			extrinsic.apply::<Test>(&dispatch_info, 0),
@@ -155,7 +171,6 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 			signed: fp_self_contained::CheckedSignature::SelfContained(source),
 			function: Call::Ethereum(call),
 		};
-		use frame_support::weights::GetDispatchInfo as _;
 		let dispatch_info = extrinsic.get_dispatch_info();
 		assert_err!(
 			extrinsic.apply::<Test>(&dispatch_info, 0),
@@ -337,7 +352,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 			transaction: signed,
 		};
 		let source = call.check_self_contained().unwrap().unwrap();
-		let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Test>, _> {
+		let extrinsic = fp_self_contained::CheckedExtrinsic::<_, _, frame_system::CheckWeight<Test>, _> {
 			signed: fp_self_contained::CheckedSignature::SelfContained(source),
 			function: Call::Ethereum(call),
 		};

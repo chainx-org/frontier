@@ -1,4 +1,4 @@
-use frame_support::{assert_err, assert_ok, unsigned::TransactionValidityError};
+use frame_support::{assert_err, assert_ok, unsigned::TransactionValidityError, weights::GetDispatchInfo};
 use rustc_hex::{FromHex, ToHex};
 use sp_runtime::{
 	traits::Applyable,

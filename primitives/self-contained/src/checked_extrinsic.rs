@@ -87,11 +87,12 @@ where
 				let unsigned_validation = U::validate_unsigned(source, &self.function)?;
 				Ok(valid.combine_with(unsigned_validation))
 			}
-			CheckedSignature::SelfContained(signed_info) => {
-				self.function.validate_self_contained(&signed_info).ok_or(
-					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
-				)?
-			}
+			CheckedSignature::SelfContained(signed_info) => self
+				.function
+				.validate_self_contained(signed_info, info, len)
+				.ok_or(TransactionValidityError::Invalid(
+					InvalidTransaction::BadProof,
+				))?
 		}
 	}
 
@@ -139,7 +140,7 @@ where
 			CheckedSignature::SelfContained(signed_info) => {
 				// If pre-dispatch fail, the block must be considered invalid
 				self.function
-					.pre_dispatch_self_contained(&signed_info)
+					.pre_dispatch_self_contained(&signed_info, info, len)
 					.ok_or(TransactionValidityError::Invalid(
 						InvalidTransaction::BadProof,
 					))??;
