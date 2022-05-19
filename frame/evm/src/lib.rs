@@ -93,6 +93,33 @@ use sp_std::vec::Vec;
 
 pub use self::{pallet::*, runner::Runner};
 
+#[cfg(feature = "chainx-adaptor")]
+pub const CHAINS_VALUE_ADAPTOR: u128 = 10_000_000_000;
+
+pub fn chainx_value_expand(origin: U256) -> U256 {
+	#[cfg(feature = "chainx-adaptor")]
+	{
+		origin.saturating_mul(U256::from(CHAINS_VALUE_ADAPTOR))
+	}
+	#[cfg(not(feature = "chainx-adaptor"))]
+	{
+		origin
+	}
+}
+
+pub fn chainx_value_shrink(origin: U256) -> U256 {
+	#[cfg(feature = "chainx-adaptor")]
+	{
+		origin
+			.checked_div(U256::from(CHAINS_VALUE_ADAPTOR))
+			.unwrap_or(U256::from(CHAINS_VALUE_ADAPTOR))
+	}
+	#[cfg(not(feature = "chainx-adaptor"))]
+	{
+		origin
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -681,7 +708,9 @@ impl<T: Config> Pallet<T> {
 
 		Account {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+			balance: chainx_value_expand(U256::from(
+				UniqueSaturatedInto::<u128>::unique_saturated_into(balance),
+			)),
 		}
 	}
 

@@ -18,8 +18,8 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	chainx_value_shrink, runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -109,7 +109,7 @@ impl<T: Config> Runner<T> {
 		}
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
+		let fee = T::OnChargeTransaction::withdraw_fee(&source, chainx_value_shrink(total_fee))?;
 
 		// Execute the EVM call.
 		let vicinity = Vicinity {
@@ -136,9 +136,12 @@ impl<T: Config> Runner<T> {
 					.fee(base_fee)
 					.checked_add(actual_priority_fee)
 					.unwrap_or(U256::max_value());
-				(actual_fee, Some(actual_priority_fee))
+				(
+					chainx_value_shrink(actual_fee),
+					Some(chainx_value_shrink(actual_priority_fee)),
+				)
 			} else {
-				(executor.fee(base_fee), None)
+				(chainx_value_shrink(executor.fee(base_fee)), None)
 			};
 		log::debug!(
 			target: "evm",
@@ -601,10 +604,12 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
+		let value = chainx_value_shrink(transfer.value);
+
 		T::Currency::transfer(
 			&source,
 			&target,
-			transfer.value.low_u128().unique_saturated_into(),
+			value.low_u128().unique_saturated_into(),
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)
