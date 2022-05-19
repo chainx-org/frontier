@@ -125,7 +125,13 @@ where
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
-		ensure_log(&block.header.digest()).map_err(|e| Error::from(e))?;
+		// FIXME: disable check `NotFound` for ChainX upgrade for now
+		match ensure_log(&block.header.digest()) {
+			Err(FindLogError::MultipleLogs) => {
+				return Err(Error::from(FindLogError::MultipleLogs).into())
+			}
+			_ => {}
+		}
 
 		self.inner
 			.import_block(block, new_cache)
