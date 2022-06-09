@@ -706,12 +706,12 @@ where
 					// Indexers heavily rely on the parent hash.
 					// Moonbase client-level patch for inconsistent runtime 1200 state.
 					let number = rich_block.inner.header.number.unwrap_or_default();
-					if rich_block.inner.header.parent_hash == H256::default() 
+					if rich_block.inner.header.parent_hash == H256::default()
 						&& number > U256::zero() {
 							let id = BlockId::Hash(substrate_hash);
 							if let Ok(Some(header)) = client.header(id) {
 								let parent_hash = *header.parent_hash();
-	
+
 								let parent_id = BlockId::Hash(parent_hash);
 								let schema =
 									frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), parent_id);
@@ -782,9 +782,9 @@ where
 					// Indexers heavily rely on the parent hash.
 					// Moonbase client-level patch for inconsistent runtime 1200 state.
 					let number = rich_block.inner.header.number.unwrap_or_default();
-					if rich_block.inner.header.parent_hash == H256::default() 
+					if rich_block.inner.header.parent_hash == H256::default()
 						&& number > U256::zero() {
-						
+
 						let id = BlockId::Hash(substrate_hash);
 						if let Ok(Some(header)) = client.header(id) {
 							let parent_hash = *header.parent_hash();
@@ -1710,7 +1710,7 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
-			let estimate_mode = true;
+			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
 			let ExecutableResult {
 				data,
 				exit_reason,
