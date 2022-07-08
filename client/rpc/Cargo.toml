@@ -47,3 +47,4 @@ pallet-ethereum = { version = "4.0.0-dev", path = "../../frame/ethereum" }
 
 [features]
 rpc_binary_search_estimate = []
+chainx-adaptor = []

@@ -66,7 +66,20 @@ pub trait StorageOverride<Block: BlockT> {
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
+	let filter_module = if module == b"EVM" {
+		#[cfg(feature = "chainx-adaptor")]
+		{
+			b"Evm"
+		}
+		#[cfg(not(feature = "chainx-adaptor"))]
+		{
+			b"EVM"
+		}
+	} else {
+		module
+	};
+
+	[twox_128(filter_module), twox_128(storage)].concat().to_vec()
 }
 
 fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
