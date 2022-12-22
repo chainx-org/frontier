@@ -836,9 +836,10 @@ where
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
-			// Handle base fee. Can be either burned, rationed, etc ...
-			OU::on_unbalanced(base_fee);
-			return Some(tip);
+			// Both fee and tip are transferred to block author(substrate account)
+			OU::on_unbalanceds(Some(base_fee).into_iter().chain(Some(tip)));
+
+			return None
 		}
 		None
 	}
