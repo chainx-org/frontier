@@ -135,6 +135,7 @@ fn fee_deduction() {
 #[test]
 fn ed_0_refund_patch_works() {
 	new_test_ext().execute_with(|| {
+		const PSC_ADAPTOR: u64 = 100_000_000u64;
 		// Verifies that the OnChargeEVMTransaction patch is applied and fixes a known bug in Substrate for evm transactions.
 		// https://github.com/paritytech/substrate/issues/10117
 		let evm_addr = H160::from_str("1000000000000000000000000000000000000003").unwrap();
@@ -148,7 +149,7 @@ fn ed_0_refund_patch_works() {
 			evm_addr,
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::from(1_000_000_000),
+			U256::from(1_000_000_000*PSC_ADAPTOR),
 			21776,
 			U256::from(1_000_000_000),
 			None,
@@ -156,7 +157,7 @@ fn ed_0_refund_patch_works() {
 			Vec::new(),
 		);
 		// All that was due, was refunded.
-		assert_eq!(Balances::free_balance(&substrate_addr), 776_000_000_000);
+		assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000 - 1_000_000_000 - 21000*10 );
 	});
 }
 
@@ -208,12 +209,13 @@ fn find_author() {
 #[test]
 fn reducible_balance() {
 	new_test_ext().execute_with(|| {
+		const PSC_ADAPTOR: u64 = 100_000_000u64;
 		let evm_addr = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let account_id = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 		let existential = ExistentialDeposit::get();
 
 		// Genesis Balance.
-		let genesis_balance = EVM::account_basic(&evm_addr).0.balance;
+		let genesis_balance = EVM::account_basic(&evm_addr).0.balance / PSC_ADAPTOR;
 
 		// Lock identifier.
 		let lock_id: LockIdentifier = *b"te/stlok";
@@ -221,7 +223,7 @@ fn reducible_balance() {
 		let to_lock = 1000;
 		Balances::set_lock(lock_id, &account_id, to_lock, WithdrawReasons::RESERVE);
 		// Reducible is, as currently configured in `account_basic`, (balance - lock - existential).
-		let reducible_balance = EVM::account_basic(&evm_addr).0.balance;
+		let reducible_balance = EVM::account_basic(&evm_addr).0.balance / PSC_ADAPTOR;
 		assert_eq!(reducible_balance, (genesis_balance - to_lock - existential));
 	});
 }
@@ -245,13 +247,15 @@ fn author_should_get_tip() {
 		);
 		result.expect("EVM can be called");
 		let after_tip = EVM::account_basic(&author).0.balance;
-		assert_eq!(after_tip, (before_tip + 21000));
+		// For PSC, OnChargeTransaction handle 21000
+		assert_eq!(after_tip, (before_tip));
 	});
 }
 
 #[test]
 fn issuance_after_tip() {
 	new_test_ext().execute_with(|| {
+		const PSC_ADAPTOR: u64 = 100_000_000u64;
 		let before_tip = <Test as Config>::Currency::total_issuance();
 		let result = EVM::call(
 			RuntimeOrigin::root(),
@@ -261,7 +265,7 @@ fn issuance_after_tip() {
 			U256::from(1),
 			1000000,
 			U256::from(2_000_000_000),
-			Some(U256::from(1)),
+			Some(U256::from(PSC_ADAPTOR)),
 			None,
 			Vec::new(),
 		);
@@ -271,7 +275,8 @@ fn issuance_after_tip() {
 		let base_fee: u64 = <Test as Config>::FeeCalculator::min_gas_price()
 			.0
 			.unique_saturated_into();
-		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)));
+		// For PSC, OnChargeTransaction handle base_fee and tip
+		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)/PSC_ADAPTOR - 21_000));
 	});
 }
 
@@ -300,6 +305,7 @@ fn author_same_balance_without_tip() {
 #[test]
 fn refunds_should_work() {
 	new_test_ext().execute_with(|| {
+		const PSC_ADAPTOR: u64 = 100_000_000u64;
 		let before_call = EVM::account_basic(&H160::default()).0.balance;
 		// Gas price is not part of the actual fee calculations anymore, only the base fee.
 		//
@@ -310,7 +316,7 @@ fn refunds_should_work() {
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::from(1),
+			U256::from(PSC_ADAPTOR),
 			1000000,
 			U256::from(2_000_000_000),
 			None,
@@ -318,7 +324,7 @@ fn refunds_should_work() {
 			Vec::new(),
 		);
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
-		let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
+		let total_cost = (U256::from(21_000) * base_fee) + U256::from(PSC_ADAPTOR);
 		let after_call = EVM::account_basic(&H160::default()).0.balance;
 		assert_eq!(after_call, before_call - total_cost);
 	});
@@ -327,6 +333,7 @@ fn refunds_should_work() {
 #[test]
 fn refunds_and_priority_should_work() {
 	new_test_ext().execute_with(|| {
+		const PSC_ADAPTOR: u64 = 100_000_000u64;
 		let author = EVM::find_author();
 		let before_tip = EVM::account_basic(&author).0.balance;
 		let before_call = EVM::account_basic(&H160::default()).0.balance;
@@ -342,7 +349,7 @@ fn refunds_and_priority_should_work() {
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::from(1),
+			U256::from(PSC_ADAPTOR),
 			1000000,
 			max_fee_per_gas,
 			Some(tip),
@@ -351,13 +358,14 @@ fn refunds_and_priority_should_work() {
 		);
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
 		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
-		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
+		let total_cost = ((used_gas * base_fee) + U256::from(actual_tip)) + U256::from(PSC_ADAPTOR);
 		let after_call = EVM::account_basic(&H160::default()).0.balance;
 		// The tip is deducted but never refunded to the caller.
 		assert_eq!(after_call, before_call - total_cost);
 
 		let after_tip = EVM::account_basic(&author).0.balance;
-		assert_eq!(after_tip, (before_tip + actual_tip));
+		// For PSC, OnChargeTransaction handle actual_tip
+		assert_eq!(after_tip, before_tip);
 	});
 }
 

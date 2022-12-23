@@ -96,6 +96,22 @@ pub use self::{
 	runner::{Runner, RunnerError},
 };
 
+#[cfg(feature = "psc_adaptor")]
+pub const PSC_VALUE_ADAPTOR: u128 = 100_000_000;
+#[cfg(not(feature = "psc_adaptor"))]
+pub const PSC_VALUE_ADAPTOR: u128 = 1;
+
+pub fn psc_value_expand(origin: U256) -> U256 {
+	origin
+		.saturating_mul(U256::from(PSC_VALUE_ADAPTOR))
+}
+
+pub fn psc_value_shrink(origin: U256) -> U256 {
+	origin
+		.checked_div(U256::from(PSC_VALUE_ADAPTOR))
+		.unwrap_or(U256::from(PSC_VALUE_ADAPTOR))
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -713,7 +729,9 @@ impl<T: Config> Pallet<T> {
 		(
 			Account {
 				nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-				balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+				balance: psc_value_expand(U256::from(
+					UniqueSaturatedInto::<u128>::unique_saturated_into(balance),
+				)),
 			},
 			T::DbWeight::get().reads(2),
 		)

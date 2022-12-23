@@ -20,7 +20,7 @@
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
 	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
-	RunnerError,
+	RunnerError, psc_value_shrink
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -170,7 +170,7 @@ where
 				})?;
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
+		let fee = T::OnChargeTransaction::withdraw_fee(&source, psc_value_shrink(total_fee))
 			.map_err(|e| RunnerError { error: e, weight })?;
 
 		// Execute the EVM call.
@@ -187,7 +187,7 @@ where
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(total_fee_per_gas);
+		let actual_fee = psc_value_shrink(executor.fee(total_fee_per_gas));
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
@@ -224,7 +224,7 @@ where
 			// Actual fee after evm execution, including tip.
 			actual_fee,
 			// Base fee.
-			executor.fee(base_fee),
+			psc_value_shrink(executor.fee(base_fee)),
 			// Fee initially withdrawn.
 			fee,
 		);
@@ -768,11 +768,12 @@ where
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
+		let value = psc_value_shrink(transfer.value);
+
 		T::Currency::transfer(
 			&source,
 			&target,
-			transfer
-				.value
+			value
 				.try_into()
 				.map_err(|_| ExitError::OutOfFund)?,
 			ExistenceRequirement::AllowDeath,

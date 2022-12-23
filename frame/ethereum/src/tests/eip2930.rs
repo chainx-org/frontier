@@ -381,6 +381,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 
 #[test]
 fn validated_transaction_apply_zero_gas_price_works() {
+	const PSC_ADAPTOR: u64 = 100_000_000u64;
 	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 1_000);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
@@ -394,7 +395,7 @@ fn validated_transaction_apply_zero_gas_price_works() {
 			gas_price: U256::zero(),
 			gas_limit: U256::from(21_000),
 			action: ethereum::TransactionAction::Call(bob.address),
-			value: U256::from(100),
+			value: U256::from(100*PSC_ADAPTOR),
 			input: Default::default(),
 		}
 		.sign(&alice.private_key, None);
