@@ -57,7 +57,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		).to.equal(binarySearchEstimation);
 	});
 
-	it.skip("block gas limit over 5M", async function () {
+	it("block gas limit over 5M", async function () {
 		expect((await context.web3.eth.getBlock("latest")).gasLimit).to.be.above(5000000);
 	});
 
