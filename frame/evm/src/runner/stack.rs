@@ -18,9 +18,9 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
-	RunnerError, psc_value_shrink
+	psc_value_shrink, runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping,
+	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
+	Pallet, RunnerError,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -773,9 +773,7 @@ where
 		T::Currency::transfer(
 			&source,
 			&target,
-			value
-				.try_into()
-				.map_err(|_| ExitError::OutOfFund)?,
+			value.try_into().map_err(|_| ExitError::OutOfFund)?,
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)

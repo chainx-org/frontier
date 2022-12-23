@@ -31,10 +31,7 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 
 		// GENESIS_ACCOUNT_BALANCE - (21000 * gasPrice)
-		const expectedGenesisBalance = (
-			BigInt(GENESIS_ACCOUNT_BALANCE) -
-			BigInt(21000) * BigInt(gasPrice)
-		).toString();
+		const expectedGenesisBalance = (BigInt(GENESIS_ACCOUNT_BALANCE) - BigInt(21000) * BigInt(gasPrice)).toString();
 		const expectedTestBalance = "0";
 
 		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT, "pending")).to.equal(expectedGenesisBalance);
@@ -72,7 +69,7 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 			BigInt(21000) * BigInt(gasPrice) -
 			BigInt(value)
 		).toString();
-		const expectedTestBalance = (Number(value) - EXISTENTIAL_DEPOSIT*100000000).toString();
+		const expectedTestBalance = (Number(value) - EXISTENTIAL_DEPOSIT * 100000000).toString();
 
 		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT, "pending")).to.equal(expectedGenesisBalance);
 		expect(await context.web3.eth.getBalance(TEST_ACCOUNT, "pending")).to.equal(expectedTestBalance);

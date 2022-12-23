@@ -102,14 +102,13 @@ pub const PSC_VALUE_ADAPTOR: u128 = 100_000_000;
 pub const PSC_VALUE_ADAPTOR: u128 = 1;
 
 pub fn psc_value_expand(origin: U256) -> U256 {
-	origin
-		.saturating_mul(U256::from(PSC_VALUE_ADAPTOR))
+	origin.saturating_mul(U256::from(PSC_VALUE_ADAPTOR))
 }
 
 pub fn psc_value_shrink(origin: U256) -> U256 {
 	origin
 		.checked_div(U256::from(PSC_VALUE_ADAPTOR))
-		.unwrap_or(U256::from(PSC_VALUE_ADAPTOR))
+		.unwrap_or_else(|| U256::from(PSC_VALUE_ADAPTOR))
 }
 
 #[frame_support::pallet]
@@ -857,7 +856,7 @@ where
 			// Both fee and tip are transferred to block author(substrate account)
 			OU::on_unbalanceds(Some(base_fee).into_iter().chain(Some(tip)));
 
-			return None
+			return None;
 		}
 		None
 	}

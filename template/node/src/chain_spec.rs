@@ -47,7 +47,6 @@ fn get_properties() -> Option<Properties> {
 	Some(properties)
 }
 
-
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 

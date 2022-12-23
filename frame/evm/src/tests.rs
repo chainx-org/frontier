@@ -149,7 +149,7 @@ fn ed_0_refund_patch_works() {
 			evm_addr,
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::from(1_000_000_000*PSC_ADAPTOR),
+			U256::from(1_000_000_000 * PSC_ADAPTOR),
 			21776,
 			U256::from(1_000_000_000),
 			None,
@@ -157,7 +157,10 @@ fn ed_0_refund_patch_works() {
 			Vec::new(),
 		);
 		// All that was due, was refunded.
-		assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000 - 1_000_000_000 - 21000*10 );
+		assert_eq!(
+			Balances::free_balance(&substrate_addr),
+			21_777_000_000_000 - 1_000_000_000 - 21000 * 10
+		);
 	});
 }
 
@@ -276,7 +279,10 @@ fn issuance_after_tip() {
 			.0
 			.unique_saturated_into();
 		// For PSC, OnChargeTransaction handle base_fee and tip
-		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)/PSC_ADAPTOR - 21_000));
+		assert_eq!(
+			after_tip,
+			(before_tip - (base_fee * 21_000) / PSC_ADAPTOR - 21_000)
+		);
 	});
 }
 
