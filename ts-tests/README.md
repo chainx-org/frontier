@@ -9,6 +9,12 @@ It is written in typescript, using Mocha/Chai as Test framework.
 Tests are separated depending of their genesis requirements.
 Each group will start a [frontier test node](frontier-test-node) with a given [spec](substrate-specs) before executing the tests.
 
+## precondition
+``txt
+nightly-2021-11-07
+cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
+./target/release/frontier-template-node --dev --sealing=manual
+``
 ## Installation
 
 ```
