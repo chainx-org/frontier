@@ -12,8 +12,8 @@ kvdb-rocksdb = "0.15.1"
 parking_lot = "0.11.2"
 
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
-sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-database = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
+sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-database = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
 
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }

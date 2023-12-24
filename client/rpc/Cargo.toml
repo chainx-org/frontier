@@ -24,20 +24,20 @@ rlp = "0.5"
 tokio = { version = "1.14", features = [ "sync" ] }
 
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-prometheus-endpoint = { package = "substrate-prometheus-endpoint",  git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-io = { version = "6.0.0",  git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sp-storage = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-network = { version = "0.10.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
-sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix" }
+prometheus-endpoint = { package = "substrate-prometheus-endpoint",  git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-io = { version = "6.0.0",  git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sp-storage = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-network = { version = "0.10.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
+sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2" }
 
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
