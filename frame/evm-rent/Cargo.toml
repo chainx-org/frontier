@@ -1,0 +1,42 @@
+[package]
+name = "pallet-evm-rent"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/frontier/"
+description = "EVM account rent calculation and processing"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
+sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+
+fp-rent = { version = "2.0.0-dev", default-features = false, path = "../../primitives/rent" }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+
+	"codec/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+
+	"pallet-timestamp/std",
+	
+	"fp-rent/std",
+]

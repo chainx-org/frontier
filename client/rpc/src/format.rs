@@ -64,6 +64,9 @@ impl Formatter for Geth {
 					VError::InsufficientFundsForTransfer => {
 						"insufficient funds for transfer".into()
 					}
+					VError::InsufficientFundsForRent => {
+						"insufficient funds for rent + gas * price + value".into()
+					},
 				},
 				_ => "unknown error".into(),
 			},

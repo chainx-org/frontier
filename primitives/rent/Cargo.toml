@@ -1,0 +1,18 @@
+[package]
+name = "fp-rent"
+version = "2.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "Primitives for Frontier consensus"
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/frontier/"
+
+[dependencies]
+sp-core = { version = "6.0.0", git = "https://github.com/chainx-org/substrate", branch = "polkadot-v0.9.18-fix2", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "sp-core/std"
+]

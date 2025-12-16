@@ -1725,6 +1725,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-rent"
+version = "2.0.0-dev"
+dependencies = [
+ "sp-core",
+]
+
+[[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
@@ -2017,6 +2024,7 @@ dependencies = [
 name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
+ "fp-rent",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -2034,6 +2042,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-evm-rent",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -4325,6 +4334,7 @@ dependencies = [
  "evm",
  "fp-consensus",
  "fp-evm",
+ "fp-rent",
  "fp-rpc",
  "fp-self-contained",
  "fp-storage",
@@ -4353,6 +4363,7 @@ version = "6.0.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "fp-rent",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4441,6 +4452,21 @@ dependencies = [
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-rent"
+version = "1.0.0"
+dependencies = [
+ "fp-rent",
+ "frame-support",
+ "frame-system",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]

@@ -60,6 +60,7 @@ pub use ethereum::{
 	TransactionAction, TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
+pub use fp_rent::EvmRentCalculator;
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
@@ -587,6 +588,14 @@ impl<T: Config> Pallet<T> {
 			return Err(InvalidTransaction::Payment.into());
 		}
 
+		let (rent, _days) = <T as pallet_evm::Config>::EvmRentCalculator::estimate_rent(origin);
+		let total_cost = total_payment.saturating_add(U256::from(rent));
+		if account_data.balance < total_cost {
+			return Err(InvalidTransaction::Custom(
+				TransactionValidationError::InsufficientFundsForRent as u8,
+			).into());
+		}
+
 		Ok((account_data.nonce, priority))
 	}
 
@@ -976,4 +985,5 @@ pub enum TransactionValidationError {
 	GasLimitTooLow,
 	GasLimitTooHigh,
 	InsufficientFundsForTransfer,
+	InsufficientFundsForRent,
 }

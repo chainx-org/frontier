@@ -37,13 +37,14 @@ use sp_version::RuntimeVersion;
 use fp_rpc::TransactionStatus;
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, Randomness},
+	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
 	},
 	ConsensusEngineId, StorageValue,
 };
+use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, GasWeightMapping, HashedAddressMapping, Runner};
@@ -52,6 +53,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+
 
 mod precompiles;
 use precompiles::FrontierPrecompiles;
@@ -238,6 +240,30 @@ parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
+#[cfg(feature = "manual-seal")]
+pub struct ManualTimestampSetter;
+
+#[cfg(feature = "manual-seal")]
+impl OnTimestampSet<u64> for ManualTimestampSetter {
+	fn on_timestamp_set(_moment: u64) {
+		// In manual-seal mode, we ignore the provided timestamp and use current system time
+		// This ensures EVM rent calculations work with real-time timestamps
+		#[cfg(feature = "std")]
+		{
+			// Get current system time in milliseconds since unix epoch
+			let now = std::time::SystemTime::now()
+				.duration_since(std::time::UNIX_EPOCH)
+				.expect("System time should be after UNIX epoch")
+				.as_millis() as u64;
+
+			// Set the current timestamp
+			pallet_timestamp::Pallet::<Runtime>::set_timestamp(now);
+
+			println!("Manual timestamp updated to current time: {} (ms since epoch)", now);
+		}
+	}
+}
+
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
@@ -246,7 +272,7 @@ impl pallet_timestamp::Config for Runtime {
 	#[cfg(feature = "aura")]
 	type OnTimestampSet = Aura;
 	#[cfg(feature = "manual-seal")]
-	type OnTimestampSet = ();
+	type OnTimestampSet = ManualTimestampSetter;
 }
 
 parameter_types! {
@@ -333,6 +359,7 @@ impl pallet_evm::Config for Runtime {
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
+	type EvmRentCalculator = EvmRent;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
 }
 
@@ -376,6 +403,11 @@ impl pallet_base_fee::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
+impl pallet_evm_rent::Config for Runtime {
+	type Event = Event;
+	type CouncilOrigin = EnsureRoot<AccountId>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -395,6 +427,7 @@ construct_runtime!(
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent},
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
+		EvmRent: pallet_evm_rent::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

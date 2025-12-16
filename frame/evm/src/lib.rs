@@ -73,6 +73,9 @@ pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
 	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
+
+pub use fp_rent::EvmRentCalculator;
+
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{
@@ -171,6 +174,9 @@ pub mod pallet {
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
+
+		/// Charge(Burn) evm rent
+		type EvmRentCalculator: EvmRentCalculator;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -768,10 +774,47 @@ where
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
 
 	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		// ====================================================
+		// Handle EVM Rent (burn logic)
+
+		// 1. H160 -> T::AccountId
+		let account_id = T::AddressMapping::into_account_id(*who);
+
+		// 2. call process_rent get rent to burn and update state
+		let rent_to_burn_u128 = T::EvmRentCalculator::process_rent(*who);
+		if rent_to_burn_u128 > 0 {
+			let rent_balance: C::Balance = rent_to_burn_u128.unique_saturated_into();
+
+			// Withdraw
+			// WithdrawReasons::FEE
+			// ExistenceRequirement::AllowDeath
+			match C::withdraw(
+				&account_id,
+				rent_balance,
+				WithdrawReasons::FEE,
+				ExistenceRequirement::AllowDeath
+			) {
+				Ok(rent_imbalance) => {
+					// !!! KeyPoint: Burn !!!
+					// rent_imbalance is NegativeImbalance
+					// We don't call resolve_creating or deposit_into_existing.
+					// We do nothing and just let it drop here.
+					// Substrate automatically reduces TotalIssuance when rent_imbalance goes out of scope.
+					drop(rent_imbalance);
+				},
+				Err(_) => {
+					// The transaction fails if the balance is insufficient to pay the rent.
+					return Err(Error::<T>::BalanceLow);
+				}
+			}
+		}
+
+		// ====================================================
+
 		if fee.is_zero() {
 			return Ok(None);
 		}
-		let account_id = T::AddressMapping::into_account_id(*who);
+
 		let imbalance = C::withdraw(
 			&account_id,
 			fee.low_u128().unique_saturated_into(),

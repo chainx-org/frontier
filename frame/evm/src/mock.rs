@@ -169,6 +169,7 @@ impl crate::Config for Test {
 	type OnChargeTransaction = EVMCurrencyAdapter<Balances, DealWithFees>;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
+	type EvmRentCalculator = ();
 
 	type WeightInfo = ();
 }
