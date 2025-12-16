@@ -23,7 +23,6 @@ use serde::Deserialize;
 
 /// Call request
 #[derive(Debug, Default, PartialEq, Deserialize, Clone)]
-#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct CallRequest {
 	/// From
