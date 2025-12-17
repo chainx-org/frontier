@@ -22,7 +22,7 @@ pub mod pallet {
 	// 2025-12-10 00:00:00 UTC
 	pub const MIN_RENT_START_TIME: u64 = 1_765_324_800_000;
 	// 1 satoshi
-	pub const SATOSHI: u128 = 1_000_000_000;
+	pub const SATOSHI: u128 = 10_000_000_000;
 	// 10 satoshis = 100 Gwei (10 * 10^10)
 	pub const DEFAULT_DAILY_RENT: u128 = 10 * SATOSHI;
 	// Milliseconds per day
