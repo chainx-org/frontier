@@ -20,9 +20,11 @@ pub mod pallet {
 	// 2026-01-01 00:00:00 UTC
 	pub const DEFAULT_RENT_START_TIME: u64 = 1_767_225_600_000;
 	// 2025-12-10 00:00:00 UTC
-	pub const MIN_START_TIME: u64 = 1_765_324_800_000;
+	pub const MIN_RENT_START_TIME: u64 = 1_765_324_800_000;
+	// 1 satoshi
+	pub const SATOSHI: u128 = 1_000_000_000;
 	// 10 satoshis = 100 Gwei (10 * 10^10)
-	pub const DEFAULT_DAILY_RENT: u128 = 100_000_000_000;
+	pub const DEFAULT_DAILY_RENT: u128 = 10 * SATOSHI;
 	// Milliseconds per day
 	pub const MILLISECONDS_PER_DAY: u64 = 86_400_000;
 
@@ -107,7 +109,7 @@ pub mod pallet {
 				.map(|_| ())
 				.or_else(ensure_root)?;
 
-			ensure!(timestamp >= MIN_START_TIME, Error::<T>::InvalidTimestamp);
+			ensure!(timestamp >= MIN_RENT_START_TIME, Error::<T>::InvalidTimestamp);
 
 			<ActiveTimestamp<T>>::put(timestamp);
 
@@ -120,7 +122,7 @@ pub mod pallet {
 				.map(|_| ())
 				.or_else(ensure_root)?;
 
-			ensure!(rent % 10_000_000_000 == 0, Error::<T>::InvalidDailyRent);
+			ensure!(rent % SATOSHI == 0, Error::<T>::InvalidDailyRent);
 
 			<DailyRent<T>>::put(rent);
 
@@ -135,16 +137,22 @@ pub mod pallet {
 	impl<T: Config> EvmRentCalculator for Pallet<T> {
 		/// Calculate and update state, return amount to charge
 		/// This method should be called by EVM Adapter (OnChargeEVMTransaction)
+		/// return rent value by satoshi(10 GWei)
 		fn process_rent(who: H160) -> u128 {
 			let now = <pallet_timestamp::Pallet<T>>::now().saturated_into::<u64>();
 			let start_time: u64 = Self::active_timestamp();
 
-			// 1. If current time is before rent start time, no charge
+			// 1. if zero address(used for eth_call), no charge
+			if who == H160::default() {
+				return 0;
+			}
+
+			// 2. If current time is before rent start time, no charge
 			if now < start_time {
 				return 0;
 			}
 
-			// 2. Get user status
+			// 3. Get user status
 			let mut status = Self::account_rent_status(who).unwrap_or(RentStatus {
 				last_rent_paid_time: start_time, // Default to system rent start time
 				accumulated_rent: 0,
@@ -155,35 +163,36 @@ pub mod pallet {
 				return 0;
 			}
 
-			// 3. Calculate elapsed time and days (floor)
+			// 4. Calculate elapsed time and days (floor)
 			let elapsed_ms = now - status.last_rent_paid_time;
 			let days_to_pay = elapsed_ms / MILLISECONDS_PER_DAY;
 
-			// 4. Less than 1 day, no charge, no state update
+			// 5. Less than 1 day, no charge, no state update
 			if days_to_pay == 0 {
 				return 0;
 			}
 
-			// 5. Calculate amount
+			// 6. Calculate amount
 			let daily_rent = Self::daily_rent();
 			let rent_amount = (days_to_pay as u128).saturating_mul(daily_rent);
 
-			// 6. Update state
+			// 7. Update state
 			// Key: Only advance paid days, keep remainder
 			let time_paid_for = days_to_pay * MILLISECONDS_PER_DAY;
 			status.last_rent_paid_time += time_paid_for;
 			status.accumulated_rent = status.accumulated_rent.saturating_add(rent_amount);
 
-			// 7. Write to storage
+			// 8. Write to storage
 			<AccountRentMap<T>>::insert(who, status);
 
-			// 8. Emit event
+			// 9. Emit event
 			Self::deposit_event(Event::RentChargedToBurn(who, days_to_pay, rent_amount));
 
-			rent_amount
+			rent_amount / SATOSHI
 		}
 
-		/// Corresponds to Solidity: estimateRent(address account)
+		/// Corresponds to Solidity: estimateRent(address account)(uint256,uint64)
+		/// return rent value by Wei
 		fn estimate_rent(who: H160) -> (u128, u64) {
 			let now = <pallet_timestamp::Pallet<T>>::now().saturated_into::<u64>();
 			let start_time: u64 = Self::active_timestamp();
@@ -405,7 +414,7 @@ mod tests {
 
 			// Process rent
 			let rent_amount = EvmRent::process_rent(account);
-			assert_eq!(rent_amount, DEFAULT_DAILY_RENT * 2);
+			assert_eq!(rent_amount, DEFAULT_DAILY_RENT * 2 / SATOSHI);
 
 			// Check that account status was created
 			let status = EvmRent::account_rent_status(account).unwrap();
@@ -429,7 +438,7 @@ mod tests {
 
 			// First call should charge rent
 			let rent_amount1 = EvmRent::process_rent(account);
-			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 3);
+			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 3 / SATOSHI);
 
 			// Second call immediately should return 0 (no new days passed)
 			let rent_amount2 = EvmRent::process_rent(account);
@@ -451,14 +460,14 @@ mod tests {
 				DEFAULT_RENT_START_TIME + 2 * MILLISECONDS_PER_DAY,
 			);
 			let rent_amount1 = EvmRent::process_rent(account);
-			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 2);
+			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 2 / SATOSHI);
 
 			// Second period: advance to 5 total days (3 more days)
 			pallet_timestamp::Pallet::<Test>::set_timestamp(
 				DEFAULT_RENT_START_TIME + 5 * MILLISECONDS_PER_DAY,
 			);
 			let rent_amount2 = EvmRent::process_rent(account);
-			assert_eq!(rent_amount2, DEFAULT_DAILY_RENT * 3);
+			assert_eq!(rent_amount2, DEFAULT_DAILY_RENT * 3 / SATOSHI);
 
 			// Total accumulated rent should be 5 days
 			let status = EvmRent::account_rent_status(account).unwrap();
@@ -485,7 +494,7 @@ mod tests {
 			);
 
 			let rent_amount = EvmRent::process_rent(account);
-			assert_eq!(rent_amount, custom_rent * 2);
+			assert_eq!(rent_amount, custom_rent * 2 / SATOSHI);
 
 			let status = EvmRent::account_rent_status(account).unwrap();
 			assert_eq!(status.accumulated_rent, custom_rent * 2);
@@ -510,7 +519,7 @@ mod tests {
 			);
 
 			let rent_amount = EvmRent::process_rent(account);
-			assert_eq!(rent_amount, DEFAULT_DAILY_RENT * 2);
+			assert_eq!(rent_amount, DEFAULT_DAILY_RENT * 2 / SATOSHI);
 
 			let status = EvmRent::account_rent_status(account).unwrap();
 			assert_eq!(
@@ -557,8 +566,8 @@ mod tests {
 			// Process rent for both accounts
 			let rent_amount1 = EvmRent::process_rent(account1);
 			let rent_amount2 = EvmRent::process_rent(account2);
-			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 3);
-			assert_eq!(rent_amount2, DEFAULT_DAILY_RENT * 3);
+			assert_eq!(rent_amount1, DEFAULT_DAILY_RENT * 3 / SATOSHI);
+			assert_eq!(rent_amount2, DEFAULT_DAILY_RENT * 3 / SATOSHI);
 
 			// Check that both accounts have independent status
 			let status1 = EvmRent::account_rent_status(account1).unwrap();

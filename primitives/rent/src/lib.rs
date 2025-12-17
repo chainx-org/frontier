@@ -6,9 +6,11 @@ use sp_core::H160;
 pub trait EvmRentCalculator {
 	/// Calculate and charge (burn) the outstanding rent for an account,
 	/// then update its status map.
+	/// return rent value by satoshi(10 GWei)
 	fn process_rent(who: H160) -> u128;
 	/// Estimate the amount of rent to be burned and the corresponding
 	/// number of rented days for an account.
+	/// return rent value by Wei
 	fn estimate_rent(who: H160) -> (u128, u64);
 }
 
